@@ -1,0 +1,3 @@
+ssl on;
+ssl_certificate /etc/letsencrypt/live/snoot.club/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/snoot.club/privkey.pem;

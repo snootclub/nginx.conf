@@ -1,0 +1,9 @@
+#!/bin/sh
+cd /www/snoot.club/snoots
+for snoot in *; do
+	real="/www/snoot.club/snoots/$snoot/public"
+	pretend="/snoots/$snoot/public"
+	sudo mkdir -p "$pretend"
+	sudo umount "$pretend" 2>/dev/null
+	[ -e "$real" ] && sudo mount --bind "$real" "$pretend"
+done

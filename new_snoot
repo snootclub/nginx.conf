@@ -1,0 +1,101 @@
+#!/bin/sh
+
+snoot="$1"
+port="$2"
+snoot_root="/www/snoot.club/snoots"
+
+cd $snoot_root
+
+mkdir -p $snoot
+
+cd $snoot
+
+user_exists="$(</etc/passwd awk -F: '{print $1}' | grep -e "^$snoot\$")"
+
+if [ -z "$user_exists" ]; then
+	sudo useradd -m -d /snoots/$snoot -g common -G common,undercommon -s /bin/nologin $snoot
+fi
+
+sudo mkdir -p logs
+
+pwn () {
+	root="$snoot_root/$snoot"
+	sudo chown "$snoot.common" -R "$root"
+	sudo chmod g+rwx -R "$root"
+	sudo chmod o+rx -R "$root"
+}
+
+pwn
+
+if [ ! -e public/index.html ]; then
+	> public/index.html cat <<HONEY
+<!doctype html>
+<marquee direction=down behavior=slide>
+	<marquee direction=right behavior=slide>
+		welcome to $snoot's homepage
+	</marquee>
+</marquee>
+HONEY
+fi
+
+if [ -z "$port" ]; then
+	location="
+	location / {
+		include /www/snoot.club/blocks/cors.nginx;
+
+		root $snoot_root/$snoot/public;
+
+		index  index.html;
+		expires 1w;
+	}"
+else
+	location="
+	location / {
+		proxy_pass http://127.0.0.1:$port/;
+		proxy_set_header Host \$http_host;
+		proxy_set_header X-Real-IP \$remote_addr;
+		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto \$scheme;
+		client_max_body_size 100m;
+	}"
+fi
+
+> nginx.conf cat <<BABY
+server {
+	include /www/snoot.club/blocks/error_page.nginx;
+
+	default_type text/plain;
+
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name $snoot.snoot.club;
+	access_log $snoot_root/$snoot/logs/access.ssl.log;
+	error_log $snoot_root/$snoot/logs/error.ssl.log;
+
+	ssl on;
+	ssl_certificate /etc/letsencrypt/live/snoot.club/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/snoot.club/privkey.pem;
+
+	$location
+}
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name $snoot.snoot.club;
+	return 301 https://$snoot.snoot.club\$request_uri;
+}
+BABY
+
+echo enter their ssh key
+
+read -r key
+
+sudo mkdir "/snoots/$snoot/.ssh"
+sudo sh -i "echo $key >> /snoots/$snoot/.ssh/authorized_keys"
+
+pwn
+
+./bind_snoots
+
+sudo nginx -s reload
