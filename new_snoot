@@ -1,101 +1,52 @@
 #!/bin/sh
+Snoot="$1"
+Snoot_Root="/www/snoot.club/snoots"
 
-snoot="$1"
-port="$2"
-snoot_root="/www/snoot.club/snoots"
+cd "$Snoot_Root"
 
-cd $snoot_root
+Existing_User="$(</etc/passwd awk -F: '{print $1}' | grep -e "^$Snoot\$")"
 
-mkdir -p $snoot
+if [ -z "$Existing_User" ]; then
+	echo
+	echo creating user
+	echo
 
-cd $snoot
-
-user_exists="$(</etc/passwd awk -F: '{print $1}' | grep -e "^$snoot\$")"
-
-if [ -z "$user_exists" ]; then
-	sudo useradd -m -d /snoots/$snoot -g common -G common,undercommon -s /bin/nologin $snoot
-fi
-
-sudo mkdir -p logs
-
-pwn () {
-	root="$snoot_root/$snoot"
-	sudo chown "$snoot.common" -R "$root"
-	sudo chmod g+rwx -R "$root"
-	sudo chmod o+rx -R "$root"
-}
-
-pwn
-
-if [ ! -e public/index.html ]; then
-	> public/index.html cat <<HONEY
-<!doctype html>
-<marquee direction=down behavior=slide>
-	<marquee direction=right behavior=slide>
-		welcome to $snoot's homepage
-	</marquee>
-</marquee>
-HONEY
-fi
-
-if [ -z "$port" ]; then
-	location="
-	location / {
-		include /www/snoot.club/blocks/cors.nginx;
-
-		root $snoot_root/$snoot/public;
-
-		index  index.html;
-		expires 1w;
-	}"
+	sudo useradd -m -d "/snoots/$Snoot" -g common -G common,undercommon -s /bin/nologin "$Snoot"
 else
-	location="
-	location / {
-		proxy_pass http://127.0.0.1:$port/;
-		proxy_set_header Host \$http_host;
-		proxy_set_header X-Real-IP \$remote_addr;
-		proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-		proxy_set_header X-Forwarded-Proto \$scheme;
-		client_max_body_size 100m;
-	}"
+	echo
+	echo user "$Snoot" existed m8, hope that\'s ok\!
+	echo
 fi
 
-> nginx.conf cat <<BABY
-server {
-	include /www/snoot.club/blocks/error_page.nginx;
+echo enter their ssh key pls
 
-	default_type text/plain;
+read -r Public_Key
 
-	listen 443 ssl http2;
-	listen [::]:443 ssl http2;
-	server_name $snoot.snoot.club;
-	access_log $snoot_root/$snoot/logs/access.ssl.log;
-	error_log $snoot_root/$snoot/logs/error.ssl.log;
+echo
+echo creating authorized_keys file on host
+echo
 
-	ssl on;
-	ssl_certificate /etc/letsencrypt/live/snoot.club/fullchain.pem;
-	ssl_certificate_key /etc/letsencrypt/live/snoot.club/privkey.pem;
+sudo mkdir -p "/snoots/$Snoot/.ssh"
+sudo sh -c "echo $Public_Key >> /snoots/$Snoot/.ssh/authorized_keys"
+sudo chmod -R 755 "/snoots/$Snoot/.ssh"
+sudo chown -R root.root "/snoots/$Snoot/.ssh"
 
-	$location
-}
+echo
+echo containing snoot
+echo
 
-server {
-	listen 80;
-	listen [::]:80;
-	server_name $snoot.snoot.club;
-	return 301 https://$snoot.snoot.club\$request_uri;
-}
-BABY
+/www/snoot.club/contain_snoot "$Snoot" "$Public_Key"
 
-echo enter their ssh key
+sudo chown -R "$Snoot.common" "$Snoot_Root/$Snoot/application/website"
 
-read -r key
+echo
+echo binding snoots
+echo
 
-sudo mkdir "/snoots/$snoot/.ssh"
-sudo sh -i "echo $key >> /snoots/$snoot/.ssh/authorized_keys"
+/www/snoot.club/bind_snoots
 
-pwn
-
-./bind_snoots
+echo
+echo reloading nginx
+echo
 
 sudo nginx -s reload

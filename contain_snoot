@@ -1,0 +1,138 @@
+#!/bin/sh
+
+Skeleton_Snoot="/www/snoot.club/skeleton"
+Snoot_Root="/www/snoot.club/snoots"
+Snoot="$1"
+Public_Key="$2"
+Last_Snoot_port="$(cat /www/snoot.club/last_snoot_port || echo -n 33110)"
+Ssh_Port="$(($Last_Snoot_port + 1))"
+Web_Port="$(($Ssh_Port + 1))"
+
+cd "$Snoot_Root"
+
+rsync -av "$Skeleton_Snoot/" "$Snoot/"
+
+cd "$Snoot/application"
+
+echo
+echo generating package json
+echo
+
+>package.json cat <<packagejson
+{
+  "name": "application",
+  "version": "1.0.0",
+  "main": "index.js",
+  "module": "main.js",
+  "scripts": {
+    "start": "micro -l tcp://0.0.0.0:${PORT-80}",
+    "start:developer": "micro -l tcp://0.0.0.0:${PORT-80}"
+  },
+  "author": "$Snoot <$Snoot@snoot.club>",
+  "license": "MPL-2.0",
+  "description": ""
+}
+packagejson
+
+echo
+echo installing javascript dependencies
+echo
+
+npm install micro serve-handler
+
+>authorized_keys echo $Public_Key
+
+echo
+echo generating index html
+echo
+
+>website/index.html cat <<indexhtml
+<!doctype html>
+<marquee direction=down behavior=alternate>
+  <marquee direction=right behavior=alternate>
+    <pre>
+      welcome to $Snoot's homepage
+
+      if you are $Snoot, then you have two choices:
+        • your ssh port is $Ssh_Port.
+          - <code>ssh root@snoot.club -p $Ssh_Port</code>
+          - the files for the application are in <code>/application</code>.
+        • your sftp user is $Snoot.
+          - <code>sftp $Snoot@snoot.club</code>
+          - the files for the website are in <code>./website</code>
+    </pre>
+  </marquee>
+</marquee>
+indexhtml
+
+cd ..
+
+echo
+echo generating docker compose
+echo
+
+>docker-compose.yml cat <<dockercomposeyml
+version: "3"
+services:
+  node:
+    image: "node:latest"
+    working_dir: /application
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./application/:/application
+    ports:
+      - "$((Ssh_Port)):22"
+      - "$((Web_Port)):80"
+    restart: always
+    command: "/application/.start.sh"
+dockercomposeyml
+
+echo starting docker container
+echo
+
+docker-compose up -d
+
+echo
+echo generating nginx config
+echo
+
+>nginx.conf cat <<nginxconf
+server {
+  include /www/snoot.club/blocks/error_page.nginx;
+
+  default_type text/plain;
+
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name $Snoot.snoot.club;
+  access_log $Snoot_Root/$Snoot/logs/access.ssl.log;
+  error_log $Snoot_Root/$Snoot/logs/error.ssl.log;
+
+  ssl on;
+  ssl_certificate /etc/letsencrypt/live/snoot.club/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/snoot.club/privkey.pem;
+
+  location / {
+    proxy_pass http://127.0.0.1:$Web_Port/;
+    proxy_set_header Host \$http_host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    client_max_body_size 100m;
+  }
+}
+
+server {
+  listen 80;
+  listen [::]:80;
+	server_name $Snoot.snoot.club;
+  return 301 https://$Snoot.snoot.club\$request_uri;
+}
+nginxconf
+
+echo
+echo updating last_snoot_port
+echo
+
+echo $Web_Port > /www/snoot.club/last_snoot_port
