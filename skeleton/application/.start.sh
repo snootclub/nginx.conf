@@ -1,5 +1,5 @@
 #!/bin/sh
-pacman -Syu --noconfirm opensshd nodejs npm pm2
+pacman -Syu --noconfirm opensshd nodejs npm pm2 python neovim
 for key_type in dsa rsa ecdsa ed25519; do
 	ssh-keygen -t dsa -N "" -f /etc/ssh/ssh_host_${key_type}_key
 done
