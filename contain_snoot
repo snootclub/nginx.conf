@@ -75,7 +75,7 @@ echo
 version: "3"
 services:
   node:
-    image: "node:latest"
+    image: "base/archlinux:latest"
     working_dir: /application
     environment:
       - NODE_ENV=production

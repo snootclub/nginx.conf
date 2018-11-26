@@ -1,4 +1,4 @@
-FROM node:latest
+FROM base/archlinux:latest
 EXPOSE 80
 
 
