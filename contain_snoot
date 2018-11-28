@@ -74,7 +74,7 @@ echo
 >docker-compose.yml cat <<dockercomposeyml
 version: "3"
 services:
-  node:
+  snoot:
     image: "base/devel:latest"
     working_dir: /application
     environment:

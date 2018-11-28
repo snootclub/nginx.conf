@@ -1,8 +1,6 @@
 #!/bin/sh
-pacman -Syu --noconfirm opensshd nodejs npm pm2 python neovim
-for key_type in dsa rsa ecdsa ed25519; do
-	ssh-keygen -t dsa -N "" -f /etc/ssh/ssh_host_${key_type}_key
-done
+pacman -Syu --noconfirm openssh nodejs npm pm2 python neovim
+ssh-keygen -A
 /bin/sshd
 mkdir -p /root/.ssh
 mv /application/authorized_keys /root/.ssh/authorized_keys
