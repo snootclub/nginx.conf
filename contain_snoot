@@ -75,7 +75,7 @@ echo
 version: "3"
 services:
   snoot:
-    image: "base/devel:latest"
+    image: "node:latest"
     working_dir: /application
     environment:
       - NODE_ENV=production

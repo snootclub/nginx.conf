@@ -18,16 +18,16 @@ else
 	echo
 fi
 
-echo enter their ssh key pls
+echo enter their github username pls
 
-read -r Public_Key
+read -r $Github_Username
 
 echo
 echo creating authorized_keys file on host
 echo
 
 sudo mkdir -p "/snoots/$Snoot/.ssh"
-sudo sh -c "echo $Public_Key >> /snoots/$Snoot/.ssh/authorized_keys"
+sudo sh -c "curl https://github.com/$Github_Username.keys >> /snoots/$Snoot/.ssh/authorized_keys"
 sudo chmod -R 755 "/snoots/$Snoot/.ssh"
 sudo chown -R root.root "/snoots/$Snoot/.ssh"
 
