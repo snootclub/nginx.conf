@@ -1,52 +1,43 @@
 #!/bin/sh
-Snoot="$1"
+echo "aw a new snoot? what's their name?"
+read -r Snoot
+
 Snoot_Root="/www/snoot.club/snoots"
 
 cd "$Snoot_Root"
 
+echo "- mm ok i'll check if $Snoot has an account"
+
 Existing_User="$(</etc/passwd awk -F: '{print $1}' | grep -e "^$Snoot\$")"
 
 if [ -z "$Existing_User" ]; then
-	echo
-	echo creating user
-	echo
+	echo "- creating user $Snoot"
 
 	sudo useradd -m -d "/snoots/$Snoot" -g common -G common,undercommon -s /bin/nologin "$Snoot"
 else
-	echo
-	echo user "$Snoot" existed m8, hope that\'s ok\!
-	echo
+	echo "- oh there's already someone called $Snoot? hope that's ok!"
 fi
 
-echo enter their github username pls
+echo "oh could you enter their github username pls?"
+read -r Github_Username
 
-read -r $Github_Username
-
-echo
-echo creating authorized_keys file on host
-echo
+echo "- creating them an authorized_keys file with their github keys in it"
 
 sudo mkdir -p "/snoots/$Snoot/.ssh"
 sudo sh -c "curl https://github.com/$Github_Username.keys >> /snoots/$Snoot/.ssh/authorized_keys"
 sudo chmod -R 755 "/snoots/$Snoot/.ssh"
 sudo chown -R root.root "/snoots/$Snoot/.ssh"
 
-echo
-echo containing snoot
-echo
+echo "- containing snoot"
 
 /www/snoot.club/contain_snoot "$Snoot" "$Public_Key"
 
 sudo chown -R "$Snoot.common" "$Snoot_Root/$Snoot/application/website"
 
-echo
-echo binding snoots
-echo
+echo "- binding snoots"
 
 /www/snoot.club/bind_snoots
 
-echo
-echo reloading nginx
-echo
+echo "- reloading nginx"
 
 sudo nginx -s reload
