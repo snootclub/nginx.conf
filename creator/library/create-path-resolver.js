@@ -1,11 +1,23 @@
 let path = require("path")
 
-module.exports = directory => (file, ...files) => {
-  let filepath = path.resolve(directory, file)
+module.exports = function createPathResolver (directory) {
+	function resolver (...files) {
+		let filepath = path.resolve(directory, ...files)
+		if (files.length) {
+			return createPathResolver(filepath)
+		}
+		return filepath
+	}
 
-  if (files.length) {
-    return path.resolve(filepath, ...files)
-  }
+	resolver.toString = function () {
+		return path.resolve(directory)
+	}
 
-  return filepath
+	Object.defineProperty(resolver, "path", {
+		get () {
+			return this.toString()
+		}
+	})
+
+	return resolver
 }

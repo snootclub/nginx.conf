@@ -4,7 +4,8 @@ let fetch = require("make-fetch-happen").defaults({
 })
 let {log, warn, shout} = require("../library/loggo.js")
 let unix = require("../library/unix.js")
-let scaffold = require("../library/scaffold.js")
+let snoots = require("../library/snoots.js")
+let shell = require("../library/shell.js")
 
 let validSnootRegex = /^[a-z][a-z0-9]{0,30}$/
 
@@ -47,10 +48,9 @@ module.exports = async function createSnoot () {
 	let githubKeys = githubUsername
 		? await getKeysFromGithub(githubUsername)
 		: ""
-	
+
 	let {
-		authorizedKeys,
-		createUnixAccount
+		authorizedKeys
 	} = await inquirer.prompt([
 		{
 			type: "editor",
@@ -64,17 +64,20 @@ module.exports = async function createSnoot () {
 		warn(`there's already a user called "${snoot}"!! i hope that's ok!`)
 	} else {
 		log("ok! creating them a unix user account on the computer")
-		await unix
-			.createUser(snoot)
+		await snoots
+			.createUnixAccount(snoot)
 			.catch(error => {
 				shout("couldnt create user!")
 				shout(error.toString())
-				warn("creating them a directory in /snoots")
+				warn("creating them a directory in /snoots as a backup")
+				return shell.run(`mkdir /snoots/${snoot}`)
 			})
 	}
 
 	log("adding their authorized_keys file so they can log in (:")
-	await unix.createSnootSshConfiguration(snoot, authorizedKeys)
+	await snoots.createChrootSshConfiguration(snoot, {authorizedKeys})
 
-	scaffold(snoot)
+	log("generating their base application files!")
+	await snoots.createBaseApplication(snoot, {authorizedKeys})
+	// await snoots.bind(snoot)
 }

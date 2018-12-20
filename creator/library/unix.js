@@ -1,13 +1,4 @@
-let {log, warn} = require("./loggo.js")
 let shell = require("./shell.js")
-let fs = require("fs-extra")
-let snoots = require("./snoots.js")
-let createResolver = require("./create-path-resolver.js")
-
-let snootGroups = [
-	"common",
-	"undercommon"
-]
 
 exports.checkYourPrivilege = function () {
 	return process.getuid() === 0
@@ -25,26 +16,28 @@ let createOptionString = options =>
 		return string.concat(`${key} ${value}`)
 	}, "")
 
-exports.createUser = async function createUser (snoot) {
-	let snootHomeDirectory = snoots.chrootResolve(snoot)
-
-	let {
-		code,
-		stdout,
-		stderr
-	} = await shell.run(
-		[
-			"useradd -m",
-			createOptionString({
-				d: snootHomeDirectory,
-				g: snootGroups[0],
-				G: snootGroups.join(","),
-				s: "/bin/no-login"
-			}),
-			snoot
-		],
-		{sudo: true}
-	)
+	exports.createUser = async function createUser ({
+		user,
+		homeDirectory,
+		groups
+	}) {
+		let {
+			code,
+			stdout,
+			stderr
+		} = await shell.run(
+			[
+				"useradd -m",
+				createOptionString({
+					d: homeDirectory,
+					g: groups[0],
+					G: groups.join(","),
+					s: "/bin/no-login"
+				}),
+				user
+			],
+			{sudo: true}
+		)
 
 	return code
 		? Promise.reject(stderr)
@@ -58,22 +51,9 @@ exports.chown = async function chown ({directory, user, group = user}) {
 	)
 }
 
-exports.createSnootSshConfiguration = async function createUserSshDirectory (snoot, authorizedKeys) {
-	let resolve = createResolver(snoot)
-	await fs.outputFile(
-		resolve(".ssh", "authorized_keys"),
-		authorizedKeys
-	)
-
-	let sshDirectory = resolve(".ssh")
-
-	await shell.run(
-		`chmod -R 755 ${sshDirectory}`,
+exports.chmod = async function chmod ({mode, directory}) {
+	return shell.run(
+		`chmod -R ${mode} ${directory}`,
 		{sudo: true}
 	)
-
-	await exports.chown({
-		directory: sshDirectory,
-		user: "root"
-	})
 }
