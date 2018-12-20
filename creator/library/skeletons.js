@@ -60,7 +60,14 @@ services:
 	},
 	"author": "${snoot} <${snoot}@snoot.club>",
 	"license": "GPL-3.0+",
-	"description": "${snoot} application on snoot.club"
+	"description": "${snoot} application on snoot.club",
+	"dependencies": {
+		"micro": "^9.3.3",
+		"serve-handler": "^5.0.7"
+	},
+	"devDependencies": {
+		"micro-dev": "^3.0.0"
+	}
 }
 `
 		},
