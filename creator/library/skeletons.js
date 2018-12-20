@@ -73,6 +73,11 @@ services:
 <meta charset="utf-8">
 <title>${snoot}'s a snoot</title>
 <style>
+	::selection {
+		background: black;
+		color: white;
+	}
+
 	body {
 		background: #ffe9ed;
 		color: #c36;
