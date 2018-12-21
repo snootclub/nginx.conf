@@ -1,11 +1,32 @@
+let {
+	basename,
+	dirname
+} = require("path")
 let shell = require("./shell.js")
+let nodeosMount = require("nodeos-mount")
+
+let unix = exports
+let util = require("util")
 
 exports.checkYourPrivilege = function () {
 	return process.getuid() === 0
 }
 
+exports.getUserId = function getUserId (snoot) {
+	let result = shell.run(`id -u ${snoot}`)
+	let buffergoo = []
+	result.stdout.on("data", data => buffergoo.push(data))
+
+	return shell.run(`id -u ${snoot}`)
+		.then(code =>
+			code
+				? null
+				: Promise.resolve(Buffer.concat(buffergoo))
+		)
+}
+
 exports.checkUserExists = async function checkUserExists (snoot) {
-	return !(await shell.run(`id -u ${snoot}`)).code
+	return !(await unix.getUserId(snoot) == null)
 }
 
 let createOptionString = options =>
@@ -16,16 +37,12 @@ let createOptionString = options =>
 		return string.concat(`${key} ${value}`)
 	}, "")
 
-	exports.createUser = async function createUser ({
+	unix.createUser = async function createUser ({
 		user,
 		homeDirectory,
 		groups
 	}) {
-		let {
-			code,
-			stdout,
-			stderr
-		} = await shell.run(
+		let promise = shell.run(
 			[
 				"useradd -m",
 				createOptionString({
@@ -39,21 +56,48 @@ let createOptionString = options =>
 			{sudo: true}
 		)
 
-	return code
-		? Promise.reject(stderr)
-		: stdout
+		let code = await promise
+
+		return code
+			? Promise.reject(promise.stderr)
+			: promise.stdout
 }
 
-exports.chown = async function chown ({directory, user, group = user}) {
+exports.chown = async function chown ({path, user, group = user, recurse = true}) {
+	let r = recurse ? "-R" : ""
+
 	return shell.run(
-		`chown -R ${user}.${group} ${directory}`,
+		`chown ${r} ${user}.${group} ${path}`,
 		{sudo: true}
 	)
 }
 
-exports.chmod = async function chmod ({mode, directory}) {
+exports.chmod = async function chmod ({mode, path, recurse = true}) {
+	let r = recurse ? "-R" : ""
+
 	return shell.run(
-		`chmod -R ${mode} ${directory}`,
+		`chmod ${r} ${mode} ${path}`,
 		{sudo: true}
 	)
 }
+
+exports.mkdir = async function mkdir ({path, createParents = true, sudo = true}) {
+	let p = createParents
+		? "-p"
+		: ""
+
+	console.log({path})
+
+	return shell.run(
+		`mkdir ${p} ${path}`,
+		{sudo}
+	)
+}
+
+exports.unmount = util.promisify(nodeosMount.umount)
+
+exports.bind = (boy, bedposts) =>
+	shell.run(
+		`mount --bind ${boy} ${bedposts}`,
+		{sudo: true}
+	).then(code => code && Promise.reject("couldnt bind"))
