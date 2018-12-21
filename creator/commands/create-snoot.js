@@ -5,9 +5,18 @@ let fetch = require("make-fetch-happen").defaults({
 let {log, warn, shout} = require("../library/loggo.js")
 let unix = require("../library/unix.js")
 let snoots = require("../library/snoots.js")
-let shell = require("../library/shell.js")
 
-let validSnootRegex = /^[a-z][a-z0-9]{0,30}$/
+process.on("unhandledRejection", error => {
+	console.log(
+		error
+	)
+	process.exit(122)
+})
+
+process.on("uncaughtException", error => {
+	console.log(error)
+	process.exit(222)
+})
 
 function getKeysFromGithub (githubUsername) {
 	log("gonna get them an authorized_keys file from github")
