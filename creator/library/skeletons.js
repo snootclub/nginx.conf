@@ -1,6 +1,15 @@
 let fs = require("fs-extra")
+let os = require("os")
 
 exports.files = {
+	"snoot.json" ({snoot, webPort, sshPort, authorizedKeys}) {
+		return JSON.stringify({
+			snoot,
+			webPort,
+			sshPort,
+			authorizedKeys
+		}, null, "\t") + os.EOL
+	},
 	"nginx.conf" ({snoot, webPort, snootsRoot}) {
 		return `server {
 	include /www/snoot.club/blocks/error_page.nginx;
@@ -69,6 +78,46 @@ services:
 		"micro-dev": "^3.0.0"
 	}
 }
+`
+		},
+		"index.js" () {
+			return `const serve = require("serve-handler")
+
+const serveOptions = {
+	public: "website",
+	cleanUrls: true,
+	renderSingle: true
+}
+
+module.exports = async (request, response) =>
+	await serve(request, response, serveOptions)
+`
+		},
+		"ecosystem.config.js" () {
+			return `module.exports = {
+	apps : [{
+		name: "snoot",
+		script: "npm start",
+		watch: true
+  }]
+}
+`
+		},
+		".start.sh" () {
+			return `#!/bin/sh
+apt update
+apt install -y vim-tiny mg openssh-server
+/usr/sbin/sshd
+mkdir -p /root/.ssh
+mv /application/authorized_keys /root/.ssh/authorized_keys
+chown -R root.root /root/.ssh
+chmod 700 -R /root/.ssh
+cd /application
+npm install
+npm i -g pm2
+pm2 ecosystem.config.js
+pm2 start --name "snoot" --watch npm -- start
+tail -f /dev/null
 `
 		},
 		"authorized_keys" ({authorizedKeys}) {
