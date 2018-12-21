@@ -6,7 +6,7 @@ exports.run = function run (command, options = {}) {
 		sudoPrompt = "could i get your password for sudo pls?",
 		sudo = false,
 		cwd,
-		env,
+		env
 	} = options
 
 	let spawnOptions = {
@@ -28,26 +28,14 @@ exports.run = function run (command, options = {}) {
 		? sudoSpawn([name, ...args], sudoSpawnOptions)
 		: spawn(name, args, spawnOptions)
 
-	let buffergoo = []
-	let badbadbuffergoo = []
-
-	let push = array => data => array.push(data)
-
-	child.stdout.on("data", data => push(buffergoo))
-	child.stderr.on("data", data => push(badbadbuffergoo))
-
-	return new Promise((resolve, reject) => {
-		child.on("close", code =>
-			resolve({
-				code,
-				stdout: Buffer.concat(buffergoo),
-				stderr: Buffer.concat(badbadbuffergoo)
-			})
-		)
+	let promise = new Promise(resolve => {
+		child.on("close", code => resolve(code))
 	})
-}
 
-exports.handle = ({code, stdout, stderr}) =>
-	code
-		? Promise.resolve({code, stdout, stderr})
-		: Promise.reject({code, stdout, stderr})
+	promise.stdout = child.stdout
+	promise.stderr = child.stderr
+	promise.stdin = child.stdin
+	promise.stdio = child.stdio
+
+	return promise
+}
