@@ -10,7 +10,7 @@ exports.files = {
 			authorizedKeys
 		}, null, "\t") + os.EOL
 	},
-	"nginx.conf" ({snoot, webPort, snootsRoot}) {
+	"nginx.conf" ({snoot, webPort}) {
 		return `server {
 	include /www/snoot.club/blocks/error_page.nginx;
 	include /www/snoot.club/blocks/ssl.nginx;
@@ -18,8 +18,8 @@ exports.files = {
 	default_type text/plain;
 
 	server_name ${snoot}.snoot.club;
-	access_log ${snootsRoot}/${snoot}/logs/access.ssl.log;
-	error_log ${snootsRoot}/${snoot}/logs/error.ssl.log;
+	access_log /www/snoot.club/snoots/${snoot}/logs/access.ssl.log;
+	error_log /www/snoot.club/snoots/${snoot}/logs/error.ssl.log;
 
 	location / {
 		include /www/snoot.club/blocks/cors.nginx;
