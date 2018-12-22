@@ -5,7 +5,7 @@ let enterSnoot = require("./commands/enter-snoot.js")
 let get = require("./commands/get.js")
 
 let arguments = yargs
-	.command(["new", "create"], "create a new snoot", () => {}, createSnoot)
+	.command(["create", "new"], "create a new snoot", () => {}, createSnoot)
 	.command("enter <snoot>", "enter a snoot's docker container", yargs => {
 		yargs.positional("snoot", {
 			describe: "the name of the snoot you'd like to enter"
@@ -21,4 +21,5 @@ let arguments = yargs
 			})
 			.help()
 	}, get)
+	.demandCommand()
 	.argv
