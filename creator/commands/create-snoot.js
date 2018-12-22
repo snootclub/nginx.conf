@@ -6,6 +6,7 @@ let fetch = require("make-fetch-happen").defaults({
 let {log, warn, shout} = require("../library/loggo.js")
 let unix = require("../library/unix.js")
 let snoots = require("../library/snoots.js")
+let shell = require("../library/shell.js")
 
 process.on("unhandledRejection", error => {
 	console.log(error)
@@ -148,6 +149,9 @@ module.exports = async function createSnoot () {
 
 	log("booting snoot container 👢")
 	await snoots.bootContainer(snoot)
+
+	log("restarting nginx 🔂")
+	await shell.run("nginx -s reload")
 }
 
 let beingRunDirectly = process.argv[1].endsWith("create-snoot.js")
