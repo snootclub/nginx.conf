@@ -1,3 +1,4 @@
+#!/usr/bin/env sudo node
 let inquirer = require("inquirer")
 let fetch = require("make-fetch-happen").defaults({
 	cacheManager: "./.snootclub/fetch-cache"
@@ -7,9 +8,7 @@ let unix = require("../library/unix.js")
 let snoots = require("../library/snoots.js")
 
 process.on("unhandledRejection", error => {
-	console.log(
-		error
-	)
+	console.log(error)
 	process.exit(122)
 })
 
@@ -149,4 +148,10 @@ module.exports = async function createSnoot () {
 
 	log("booting snoot container 👢")
 	await snoots.bootContainer(snoot)
+}
+
+let beingRunDirectly = process.argv[1].endsWith("create-snoot.js")
+
+if (beingRunDirectly) {
+	module.exports()
 }

@@ -1,6 +1,6 @@
 {
   "name": "@snootclub/create-snoot",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "snoot club",
   "main": "index.js",
   "scripts": {
@@ -19,5 +19,9 @@
     "sudo": "^1.0.3",
     "yargs": "^12.0.5"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "bin": {
+		"snoot": "./index.js",
+		"create-snoot": "./commands/create-snoot.js"
+	}
 }
