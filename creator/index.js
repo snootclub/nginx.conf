@@ -1,4 +1,4 @@
-#!/usr/bin/env sudo node
+#!/usr/bin/env -S sudo node
 let yargs = require("yargs")
 let createSnoot = require("./commands/create-snoot.js")
 let enterSnoot = require("./commands/enter-snoot.js")

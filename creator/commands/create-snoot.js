@@ -1,4 +1,4 @@
-#!/usr/bin/env sudo node
+#!/usr/bin/env -S sudo node
 let inquirer = require("inquirer")
 let fetch = require("make-fetch-happen").defaults({
 	cacheManager: "./.snootclub/fetch-cache"
