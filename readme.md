@@ -1,1 +1,1 @@
-Any further development on post-receive will happen on https://git.snoot.club/snootclub/post-receive
+Any further development on nginx.conf will happen on https://git.snoot.club/snootclub/nginx.conf
